@@ -10,7 +10,7 @@
             supportedTypes="PHOTO_IMAGE" isCustomizable="TRUE">
             <DefaultProviderPolicy
                 defaultSystemProvider="EMPTY"
-                defaultSystemProviderType="EMPTY"
+                defaultSystemProviderType="PHOTO_IMAGE"
                 primaryProvider="fr.stephane.socialbattery/fr.stephane.socialbattery.BatteryComplicationService"
                 primaryProviderType="PHOTO_IMAGE" />
             <BoundingOval x="0" y="0" width="450" height="450" />
@@ -27,7 +27,7 @@
             supportedTypes="SHORT_TEXT" isCustomizable="TRUE">
             <DefaultProviderPolicy
                 defaultSystemProvider="EMPTY"
-                defaultSystemProviderType="EMPTY"
+                defaultSystemProviderType="SHORT_TEXT"
                 primaryProvider="fr.stephane.socialbattery/fr.stephane.socialbattery.BatteryComplicationService"
                 primaryProviderType="SHORT_TEXT" />
             <BoundingBox x="0" y="0" width="300" height="80" />

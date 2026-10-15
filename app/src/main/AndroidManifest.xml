@@ -54,7 +54,7 @@
                 android:value="300" />
             <meta-data
                 android:name="android.support.wearable.complications.SAFE_WATCH_FACES"
-                android:value="fr.stephane.socialbattery.watchface" />
+                android:value="fr.stephane.socialbattery.watchface,com.samsung.wear.watchface.runtime,com.google.wear.watchface.runtime" />
         </service>
     </application>
 </manifest>
