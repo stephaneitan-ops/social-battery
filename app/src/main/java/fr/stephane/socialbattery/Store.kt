@@ -55,8 +55,18 @@ class Store(context: Context) {
         val prev = p.getString("actState", "") ?: ""
         val prevAt = p.getLong("actAt", at)
         val e = p.edit()
-        if (prev == "ASLEEP" && state != "ASLEEP" && at - prevAt > 2 * 3_600_000L) {
-            e.putLong("wakeAt", at).putLong("sleepMs", at - prevAt)          // reveil apres une vraie nuit
+        if (prev == "ASLEEP" && state != "ASLEEP") {
+            val segment = at - prevAt
+            val lastWake = p.getLong("segWakeAt", 0)
+            // Meme nuit si on se rendort moins de 3 h apres le dernier reveil
+            val sameNight = lastWake > 0 && prevAt - lastWake < 3 * 3_600_000L
+            val total = (if (sameNight) p.getLong("nightMs", 0) else 0L) + segment
+            val wakeups = if (sameNight) p.getInt("nightWakeups", 0) + 1 else 0
+            e.putLong("segWakeAt", at).putLong("nightMs", total).putInt("nightWakeups", wakeups)
+            if (total > 2 * 3_600_000L) {
+                // Nuit consideree : reveil = dernier reveil, sommeil = total cumule
+                e.putLong("wakeAt", at).putLong("sleepMs", total).putInt("wakeups", wakeups)
+            }
         }
         if (prev == "EXERCISE" && state != "EXERCISE") {
             e.putInt("sportMin", sportMinutesDone() + ((at - prevAt) / 60_000L).toInt())
@@ -108,7 +118,8 @@ class Store(context: Context) {
 
     /**
      * Calcul de la batterie sociale (0-100 %) :
-     *  - Sommeil  : -5 % par heure en dessous de 7 h la nuit derniere (max -25)
+     *  - Sommeil  : -5 % par heure en dessous de 7 h (max -25)
+ *               -3 % par reveil nocturne au-dela du premier (max -10), total max -30
      *  - Eveil    : -3 % par heure depuis ton reveil reel (7 h si inconnu) (max -45)
      *  - Pas      : -2 % par tranche de 1000 pas (max -25)
      *  - Stress   : -1,2 % par battement au-dessus du repos, hors sport (max -30)
@@ -123,8 +134,11 @@ class Store(context: Context) {
         val wakeAt = p.getLong("wakeAt", 0).takeIf { it >= dayStart - 3 * 3_600_000L }
         val wake = wakeAt ?: (dayStart + 7 * 3_600_000L)
 
+        // Sommeil : duree totale de la nuit + reveils nocturnes (au-dela du premier)
         val sleepDrain = if (wakeAt != null) {
-            ((7f - p.getLong("sleepMs", 0) / 3_600_000f) * 5f).coerceIn(0f, 25f)
+            val shortNight = ((7f - p.getLong("sleepMs", 0) / 3_600_000f) * 5f).coerceIn(0f, 25f)
+            val restless = ((p.getInt("wakeups", 0) - 1).coerceAtLeast(0) * 3f).coerceAtMost(10f)
+            (shortNight + restless).coerceAtMost(30f)
         } else 0f
         val timeDrain = ((now - wake).coerceAtLeast(0) / 3_600_000f * 3f).coerceAtMost(45f)
 
@@ -144,7 +158,7 @@ class Store(context: Context) {
 
         val pct = (100f - sleepDrain - timeDrain - stepDrain - hrDrain - meetDrain + sportBonus)
             .roundToInt().coerceIn(0, 100)
-        val detail = "sommeil=-${sleepDrain.roundToInt()} eveil=-${timeDrain.roundToInt()} " +
+        val detail = "sommeil=-${sleepDrain.roundToInt()}(${p.getLong("sleepMs", 0) / 60_000}min,${p.getInt("wakeups", 0)}rev) eveil=-${timeDrain.roundToInt()} " +
             "pas=-${stepDrain.roundToInt()} stress=-${hrDrain.roundToInt()} " +
             "agenda=-${meetDrain.roundToInt()}(${meetMin}min) sport=+${sportBonus.roundToInt()}(${sportMin}min) => $pct%"
         return detail to pct
