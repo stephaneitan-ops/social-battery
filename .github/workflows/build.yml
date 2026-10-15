@@ -44,6 +44,16 @@ jobs:
             exit 1
           fi
 
+      - name: Analyse mode repos (AOD) du cadran
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download -R google/watchface --pattern "memory-footprint.jar" -D wff
+          apk=watchface/build/outputs/apk/debug/watchface-debug.apk
+          { java -jar wff/memory-footprint.jar --watch-face $apk --schema-version 1 --apply-v1-offload-limitations --verbose 2>&1 | tail -30; } > mem.log || true
+          msg=$(cut -c1-250 mem.log | sed ':a;N;$!ba;s/\n/%0A/g')
+          echo "::warning title=WFF::$msg"
+
       - name: Renommer les APK
         run: |
           mkdir out

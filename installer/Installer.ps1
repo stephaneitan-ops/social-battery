@@ -100,7 +100,9 @@ if ($Mode -eq 'diag') {
     & $adb -s $serial pull /sdcard/sb.png $png *> $null
     # Capture du cadran
     & $adb -s $serial shell input keyevent KEYCODE_HOME
-    Start-Sleep -Seconds 5
+    Start-Sleep -Seconds 2
+    & $adb -s $serial shell input keyevent KEYCODE_WAKEUP
+    Start-Sleep -Seconds 3
     & $adb -s $serial shell screencap -p /sdcard/sb2.png
     & $adb -s $serial pull /sdcard/sb2.png (Join-Path $desk 'SocialBattery-cadran.png') *> $null
     @(
