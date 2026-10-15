@@ -2,7 +2,10 @@ package fr.stephane.socialbattery
 
 import android.Manifest
 import android.os.Build
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
+import androidx.compose.runtime.SideEffect
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -44,21 +47,54 @@ import kotlin.math.abs
 
 class MainActivity : ComponentActivity() {
 
+    private val bgPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { startSensors() }
+
     private val permissions = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { HealthListenerService.register(this) }
+    ) { afterMainPermissions() }
+
+    private fun missing(vararg perms: String) =
+        perms.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.i(TAG, "onCreate sdk=${Build.VERSION.SDK_INT}")
         // Garde l'écran allumé tant que le badge est affiché
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        val heartPerm = if (Build.VERSION.SDK_INT >= 36) "android.permission.health.READ_HEART_RATE"
-        else Manifest.permission.BODY_SENSORS
-        permissions.launch(arrayOf(heartPerm, Manifest.permission.ACTIVITY_RECOGNITION))
-
         val store = Store(this)
         setContent { BadgeScreen(store) }
+        Log.i(TAG, "setContent ok")
+
+        // Ne demande les autorisations que si elles manquent
+        val heartPerm = if (Build.VERSION.SDK_INT >= 36) PERM_HEART_RATE else Manifest.permission.BODY_SENSORS
+        val needed = missing(heartPerm, Manifest.permission.ACTIVITY_RECOGNITION)
+        Log.i(TAG, "permissions manquantes=$needed")
+        if (needed.isEmpty()) afterMainPermissions() else permissions.launch(needed.toTypedArray())
+    }
+
+    /** Wear OS 6 : autorisation séparée pour lire le cœur en arrière-plan. */
+    private fun afterMainPermissions() {
+        if (Build.VERSION.SDK_INT >= 36 && missing(PERM_BACKGROUND).isNotEmpty()) {
+            bgPermission.launch(PERM_BACKGROUND)
+        } else startSensors()
+    }
+
+    private fun startSensors() {
+        try {
+            HealthListenerService.register(this)
+            Log.i(TAG, "capteurs enregistres")
+        } catch (e: Exception) {
+            Log.e(TAG, "capteurs KO", e)
+        }
+    }
+
+    companion object {
+        const val TAG = "SocialBattery"
+        const val PERM_HEART_RATE = "android.permission.health.READ_HEART_RATE"
+        const val PERM_BACKGROUND = "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
     }
 }
 
@@ -79,6 +115,7 @@ fun BadgeScreen(store: Store) {
     LaunchedEffect(Unit) { focus.requestFocus() }
 
     val level = if (manual >= 0) Level.entries[manual] else Level.fromPercent(percent)
+    SideEffect { Log.i(MainActivity.TAG, "dessin badge niveau=$level pct=$percent manuel=$manual") }
     val bg by animateColorAsState(level.color, label = "bg")
     val max = Level.entries.size - 1
 

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fond vert : si l'écran reste vert sans emoji, c'est l'affichage du badge qui bloque -->
+    <style name="AppTheme" parent="@android:style/Theme.DeviceDefault">
+        <item name="android:windowBackground">@color/happy</item>
+    </style>
+    <color name="happy">#FF2ECC9A</color>
+</resources>

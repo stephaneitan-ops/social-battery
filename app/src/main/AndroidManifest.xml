@@ -6,6 +6,7 @@
     <!-- Capteurs : fréquence cardiaque + pas -->
     <uses-permission android:name="android.permission.BODY_SENSORS" />
     <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
@@ -14,7 +15,7 @@
         android:icon="@drawable/ic_launcher"
         android:label="Social Battery"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault">
+        android:theme="@style/AppTheme">
 
         <meta-data
             android:name="com.google.android.wearable.standalone"

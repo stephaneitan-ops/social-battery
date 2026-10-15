@@ -91,8 +91,9 @@ if ($Mode -eq 'diag') {
     $png  = Join-Path $desk 'SocialBattery-ecran.png'
     & $adb -s $serial logcat -c
     & $adb -s $serial shell am force-stop fr.stephane.socialbattery
+    & $adb -s $serial shell input keyevent KEYCODE_WAKEUP
     & $adb -s $serial shell am start -n fr.stephane.socialbattery/.MainActivity *> $null
-    Start-Sleep -Seconds 8
+    Start-Sleep -Seconds 5
     & $adb -s $serial shell screencap -p /sdcard/sb.png
     & $adb -s $serial pull /sdcard/sb.png $png *> $null
     @(
@@ -103,8 +104,11 @@ if ($Mode -eq 'diag') {
         "=== Appli installee ==="
         (& $adb -s $serial shell dumpsys package fr.stephane.socialbattery | Select-String "versionName|granted=")
         "=== Ecran au premier plan ==="
-        (& $adb -s $serial shell dumpsys activity activities | Select-String "mResumedActivity|topResumedActivity")
+        (& $adb -s $serial shell dumpsys window | Select-String "mCurrentFocus|mFocusedApp|mScreenOn|mAwake")
         "=== Journal ==="
+        "=== Appli ==="
+        (& $adb -s $serial logcat -d -v brief "SocialBattery:V" "AndroidRuntime:E" "*:S")
+        "=== Systeme ==="
         (& $adb -s $serial logcat -d -v brief "*:W")
     ) | Out-File -Encoding utf8 $log
     Write-Host ""
