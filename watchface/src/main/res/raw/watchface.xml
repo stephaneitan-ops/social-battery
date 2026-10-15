@@ -3,6 +3,11 @@
     <Metadata key="CLOCK_TYPE" value="DIGITAL" />
     <Metadata key="PREVIEW_TIME" value="10:08:32" />
 
+    <!-- Réglage dans Personnaliser : afficher l'heure ou non -->
+    <UserConfigurations>
+        <BooleanConfiguration id="showTime" displayName="show_time" defaultValue="TRUE" />
+    </UserConfigurations>
+
     <Scene backgroundColor="#FF000000">
 
         <!-- Écran actif : badge complet en couleur, fourni par l'appli (masqué au repos) -->
@@ -43,11 +48,15 @@
             </Complication>
         </ComplicationSlot>
 
-        <!-- Heure en petit, entre l'emoji et la phrase du bas -->
-        <DigitalClock x="125" y="282" width="200" height="46">
-            <TimeText format="hh:mm" hourFormat="24" align="CENTER" x="0" y="0" width="200" height="46">
-                <Font family="SYNC_TO_DEVICE" size="36" weight="BOLD" color="#FFFFFFFF" />
-            </TimeText>
-        </DigitalClock>
+        <BooleanConfiguration id="showTime">
+            <BooleanOption id="TRUE">
+                <!-- Heure en petit, entre l'emoji et la phrase du bas -->
+                <DigitalClock x="125" y="282" width="200" height="46">
+                    <TimeText format="hh:mm" hourFormat="24" align="CENTER" x="0" y="0" width="200" height="46">
+                        <Font family="SYNC_TO_DEVICE" size="36" weight="BOLD" color="#FFFFFFFF" />
+                    </TimeText>
+                </DigitalClock>
+            </BooleanOption>
+        </BooleanConfiguration>
     </Scene>
 </WatchFace>
