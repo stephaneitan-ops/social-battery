@@ -50,20 +50,104 @@ class Store(context: Context) {
         p.edit().putLong("steps", steps).putString("stepsDay", LocalDate.now().toString()).apply()
     }
 
-    fun autoPercent(): Int {
-        val now = LocalTime.now()
-        val minutesAwake = (now.hour * 60 + now.minute - 7 * 60).coerceAtLeast(0)
-        val timeDrain = (minutesAwake / 60f * 3f).coerceAtMost(45f)
+    // --- Sommeil et sport (etat d'activite detecte par la montre) ---
+    fun onActivityState(state: String, at: Long) {
+        val prev = p.getString("actState", "") ?: ""
+        val prevAt = p.getLong("actAt", at)
+        val e = p.edit()
+        if (prev == "ASLEEP" && state != "ASLEEP" && at - prevAt > 2 * 3_600_000L) {
+            e.putLong("wakeAt", at).putLong("sleepMs", at - prevAt)          // reveil apres une vraie nuit
+        }
+        if (prev == "EXERCISE" && state != "EXERCISE") {
+            e.putInt("sportMin", sportMinutesDone() + ((at - prevAt) / 60_000L).toInt())
+                .putString("sportDay", LocalDate.now().toString())
+        }
+        e.putString("actState", state).putLong("actAt", at).apply()
+    }
+
+    private fun sportMinutesDone() =
+        if (p.getString("sportDay", "") == LocalDate.now().toString()) p.getInt("sportMin", 0) else 0
+
+    private fun sportMinutesToday(): Int {
+        val live = if (p.getString("actState", "") == "EXERCISE")
+            ((System.currentTimeMillis() - p.getLong("actAt", 0)) / 60_000L).toInt().coerceIn(0, 300) else 0
+        return sportMinutesDone() + live
+    }
+
+    // --- Agenda : minutes de rendez-vous ecoulees aujourd'hui ---
+    private fun meetingMinutesToday(): Int {
+        if (ctx.checkSelfPermission(android.Manifest.permission.READ_CALENDAR) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED) return 0
+        val start = LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val now = System.currentTimeMillis()
+        val uri = android.provider.CalendarContract.Instances.CONTENT_URI.buildUpon().also {
+            android.content.ContentUris.appendId(it, start)
+            android.content.ContentUris.appendId(it, now)
+        }.build()
+        return try {
+            ctx.contentResolver.query(
+                uri,
+                arrayOf(
+                    android.provider.CalendarContract.Instances.BEGIN,
+                    android.provider.CalendarContract.Instances.END,
+                    android.provider.CalendarContract.Instances.ALL_DAY,
+                    android.provider.CalendarContract.Instances.AVAILABILITY
+                ), null, null, null
+            )?.use { c ->
+                var ms = 0L
+                while (c.moveToNext()) {
+                    if (c.getInt(2) == 1) continue                                     // journee entiere
+                    if (c.getInt(3) == android.provider.CalendarContract.Instances.AVAILABILITY_FREE) continue
+                    val b = maxOf(c.getLong(0), start); val e = minOf(c.getLong(1), now)
+                    if (e > b) ms += e - b
+                }
+                (ms / 60_000L).toInt()
+            } ?: 0
+        } catch (e: Exception) { 0 }
+    }
+
+    /**
+     * Calcul de la batterie sociale (0-100 %) :
+     *  - Sommeil  : -5 % par heure en dessous de 7 h la nuit derniere (max -25)
+     *  - Eveil    : -3 % par heure depuis ton reveil reel (7 h si inconnu) (max -45)
+     *  - Pas      : -2 % par tranche de 1000 pas (max -25)
+     *  - Stress   : -1,2 % par battement au-dessus du repos, hors sport (max -30)
+     *  - Agenda   : -6 % par heure de rendez-vous ecoulee (max -30)
+     *  - Sport    : +1 % par 5 minutes de sport (max +15), ca defoule
+     */
+    fun autoPercent(): Int = breakdown().second
+
+    fun breakdown(): Pair<String, Int> {
+        val now = System.currentTimeMillis()
+        val dayStart = LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val wakeAt = p.getLong("wakeAt", 0).takeIf { it >= dayStart - 3 * 3_600_000L }
+        val wake = wakeAt ?: (dayStart + 7 * 3_600_000L)
+
+        val sleepDrain = if (wakeAt != null) {
+            ((7f - p.getLong("sleepMs", 0) / 3_600_000f) * 5f).coerceIn(0f, 25f)
+        } else 0f
+        val timeDrain = ((now - wake).coerceAtLeast(0) / 3_600_000f * 3f).coerceAtMost(45f)
 
         val steps = if (p.getString("stepsDay", "") == LocalDate.now().toString()) p.getLong("steps", 0) else 0
         val stepDrain = (steps / 1000f * 2f).coerceAtMost(25f)
 
-        val hrFresh = System.currentTimeMillis() - p.getLong("hrAt", 0) < 30 * 60_000
-        val hrDrain = if (hrFresh) {
+        val exercising = p.getString("actState", "") == "EXERCISE"
+        val hrFresh = now - p.getLong("hrAt", 0) < 30 * 60_000
+        val hrDrain = if (hrFresh && !exercising) {
             ((p.getFloat("hr", 0f) - p.getFloat("baseline", 65f)) * 1.2f).coerceIn(0f, 30f)
         } else 0f
 
-        return (100f - timeDrain - stepDrain - hrDrain).roundToInt().coerceIn(0, 100)
+        val meetMin = meetingMinutesToday()
+        val meetDrain = (meetMin / 60f * 6f).coerceAtMost(30f)
+        val sportMin = sportMinutesToday()
+        val sportBonus = (sportMin / 5f).coerceAtMost(15f)
+
+        val pct = (100f - sleepDrain - timeDrain - stepDrain - hrDrain - meetDrain + sportBonus)
+            .roundToInt().coerceIn(0, 100)
+        val detail = "sommeil=-${sleepDrain.roundToInt()} eveil=-${timeDrain.roundToInt()} " +
+            "pas=-${stepDrain.roundToInt()} stress=-${hrDrain.roundToInt()} " +
+            "agenda=-${meetDrain.roundToInt()}(${meetMin}min) sport=+${sportBonus.roundToInt()}(${sportMin}min) => $pct%"
+        return detail to pct
     }
 
     /** Demande au cadran de se redessiner si le niveau a changé (ou toujours si force). */

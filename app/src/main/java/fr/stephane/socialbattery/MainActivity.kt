@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
 
         // Ne demande les autorisations que si elles manquent
         val heartPerm = if (Build.VERSION.SDK_INT >= 36) PERM_HEART_RATE else Manifest.permission.BODY_SENSORS
-        val needed = missing(heartPerm, Manifest.permission.ACTIVITY_RECOGNITION)
+        val needed = missing(heartPerm, Manifest.permission.ACTIVITY_RECOGNITION, Manifest.permission.READ_CALENDAR)
         Log.i(TAG, "permissions manquantes=$needed")
         if (needed.isEmpty()) afterMainPermissions() else permissions.launch(needed.toTypedArray())
     }
@@ -119,7 +119,9 @@ fun BadgeScreen(store: Store) {
     // Recalcule le niveau auto toutes les 30 s
     LaunchedEffect(Unit) {
         while (true) {
-            percent = store.autoPercent()
+            val (detail, pct) = store.breakdown()
+            percent = pct
+            Log.i(MainActivity.TAG, "calcul $detail")
             delay(30_000)
         }
     }

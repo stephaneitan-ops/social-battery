@@ -12,8 +12,8 @@ android {
         applicationId = "fr.stephane.socialbattery"
         minSdk = 30
         targetSdk = 34
-        versionCode = 7
-        versionName = "1.3"
+        versionCode = 8
+        versionName = "1.4"
     }
 
     // Clé fixe : chaque nouvelle version s'installe par-dessus l'ancienne
