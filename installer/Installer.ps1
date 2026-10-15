@@ -98,6 +98,11 @@ if ($Mode -eq 'diag') {
     Start-Sleep -Seconds 5
     & $adb -s $serial shell screencap -p /sdcard/sb.png
     & $adb -s $serial pull /sdcard/sb.png $png *> $null
+    # Capture du cadran
+    & $adb -s $serial shell input keyevent KEYCODE_HOME
+    Start-Sleep -Seconds 5
+    & $adb -s $serial shell screencap -p /sdcard/sb2.png
+    & $adb -s $serial pull /sdcard/sb2.png (Join-Path $desk 'SocialBattery-cadran.png') *> $null
     @(
         "=== Montre ==="
         (& $adb -s $serial shell getprop ro.product.model)
@@ -114,8 +119,8 @@ if ($Mode -eq 'diag') {
         (& $adb -s $serial logcat -d -v brief "*:W")
     ) | Out-File -Encoding utf8 $log
     Write-Host ""
-    Write-Host "Termine. Deux fichiers sont sur ton Bureau :" -ForegroundColor Green
-    Write-Host "  SocialBattery-diagnostic.txt et SocialBattery-ecran.png"
+    Write-Host "Termine. Trois fichiers sont sur ton Bureau :" -ForegroundColor Green
+    Write-Host "  SocialBattery-diagnostic.txt, SocialBattery-ecran.png et SocialBattery-cadran.png"
     Write-Host "Envoie-les a Claude."
     Pause-Exit 0
 }
