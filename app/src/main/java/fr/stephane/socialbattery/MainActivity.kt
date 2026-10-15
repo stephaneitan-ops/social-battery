@@ -36,7 +36,7 @@ import androidx.wear.compose.foundation.CurvedDirection
 import androidx.wear.compose.foundation.CurvedLayout
 import androidx.wear.compose.foundation.CurvedModifier
 import androidx.wear.compose.foundation.CurvedTextStyle
-import androidx.wear.compose.foundation.curvedText
+import androidx.wear.compose.material.curvedText
 import androidx.wear.compose.foundation.padding
 import androidx.wear.compose.material.Text
 import kotlinx.coroutines.delay

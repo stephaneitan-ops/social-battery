@@ -44,6 +44,7 @@ dependencies {
     implementation("androidx.wear.compose:compose-foundation:1.4.0")
     implementation("androidx.wear.compose:compose-material:1.4.0")
     implementation("androidx.health:health-services-client:1.0.0")
+    implementation("com.google.guava:guava:33.3.1-android")
     implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 }
