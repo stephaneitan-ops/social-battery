@@ -12,8 +12,8 @@ android {
         applicationId = "fr.stephane.socialbattery"
         minSdk = 30
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.1"
+        versionCode = 4
+        versionName = "1.2"
     }
 
     // Clé fixe : chaque nouvelle version s'installe par-dessus l'ancienne
@@ -45,6 +45,8 @@ dependencies {
     implementation("androidx.wear.compose:compose-material:1.4.0")
     implementation("androidx.health:health-services-client:1.0.0")
     implementation("com.google.guava:guava:33.3.1-android")
+    implementation("androidx.wear.tiles:tiles:1.4.1")
+    implementation("androidx.wear.protolayout:protolayout:1.2.1")
     implementation("androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 }

@@ -56,5 +56,20 @@
                 android:name="android.support.wearable.complications.SAFE_WATCH_FACES"
                 android:value="fr.stephane.socialbattery.watchface,com.samsung.wear.watchface.runtime,com.google.wear.watchface.runtime" />
         </service>
+
+        <!-- Carte (tuile) Social Battery -->
+        <service
+            android:name=".BatteryTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_launcher"
+            android:label="Social Battery"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+            <meta-data
+                android:name="androidx.wear.tiles.PREVIEW"
+                android:resource="@drawable/ic_launcher" />
+        </service>
     </application>
 </manifest>

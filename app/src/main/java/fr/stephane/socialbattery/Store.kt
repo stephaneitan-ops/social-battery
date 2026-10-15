@@ -74,5 +74,7 @@ class Store(context: Context) {
         ComplicationDataSourceUpdateRequester
             .create(ctx, ComponentName(ctx, BatteryComplicationService::class.java))
             .requestUpdateAll()
+        // Met aussi a jour la carte (tuile)
+        androidx.wear.tiles.TileService.getUpdater(ctx).requestUpdate(BatteryTileService::class.java)
     }
 }
