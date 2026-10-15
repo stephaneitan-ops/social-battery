@@ -13,7 +13,15 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -100,10 +108,13 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun BadgeScreen(store: Store) {
-    var manual by remember { mutableIntStateOf(store.manualIndex) }
+    var manual by remember { mutableIntStateOf(store.manualIndex) }   // -1 = auto
     var percent by remember { mutableIntStateOf(store.autoPercent()) }
+    var editing by remember { mutableStateOf(false) }                  // mode reglage deverrouille
+    var lastInput by remember { mutableIntStateOf(0) }                 // relance le minuteur de verrouillage
     var rotaryAcc by remember { mutableFloatStateOf(0f) }
     val focus = remember { FocusRequester() }
+    val haptic = LocalHapticFeedback.current
 
     // Recalcule le niveau auto toutes les 30 s
     LaunchedEffect(Unit) {
@@ -114,12 +125,33 @@ fun BadgeScreen(store: Store) {
     }
     LaunchedEffect(Unit) { focus.requestFocus() }
 
-    val level = if (manual >= 0) Level.entries[manual] else Level.fromPercent(percent)
-    SideEffect { Log.i(MainActivity.TAG, "dessin badge niveau=$level pct=$percent manuel=$manual") }
-    val bg by animateColorAsState(level.color, label = "bg")
-    val max = Level.entries.size - 1
+    // Verrouillage automatique apres 4 s sans toucher
+    LaunchedEffect(editing, lastInput) {
+        if (editing) {
+            delay(4_000)
+            editing = false
+        }
+    }
 
-    fun setManual(i: Int) { manual = i; store.manualIndex = i }
+    val level = if (manual >= 0) Level.entries[manual] else Level.fromPercent(percent)
+    SideEffect { Log.i(MainActivity.TAG, "dessin badge niveau=$level pct=$percent manuel=$manual reglage=$editing") }
+    val bg by animateColorAsState(level.color, label = "bg")
+
+    // Choix en mode reglage : 0 = AUTO, 1..4 = niveaux
+    val choices = Level.entries.size + 1
+    fun step(delta: Int) {
+        val next = ((manual + 1 + delta) % choices + choices) % choices
+        manual = next - 1
+        store.manualIndex = manual
+        if (manual < 0) percent = store.autoPercent()
+        lastInput++
+    }
+    val onTap by rememberUpdatedState { if (editing) step(1) }
+    val onUnlock by rememberUpdatedState {
+        editing = true
+        lastInput++
+        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+    }
 
     val bigStyle = CurvedTextStyle(fontSize = 24.sp, fontWeight = FontWeight.Black, color = Color.White)
     val smallStyle = CurvedTextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
@@ -128,25 +160,36 @@ fun BadgeScreen(store: Store) {
         modifier = Modifier
             .fillMaxSize()
             .background(bg)
-            // Lunette / couronne : change de niveau à la main
+            // Lunette : change le niveau, seulement en mode reglage
             .onRotaryScrollEvent {
-                rotaryAcc += it.verticalScrollPixels
-                if (abs(rotaryAcc) > 60f) {
-                    val step = if (rotaryAcc > 0) 1 else -1
-                    setManual((level.ordinal + step).coerceIn(0, max))
-                    rotaryAcc = 0f
+                if (editing) {
+                    rotaryAcc += it.verticalScrollPixels
+                    if (abs(rotaryAcc) > 60f) {
+                        step(if (rotaryAcc > 0) 1 else -1)
+                        rotaryAcc = 0f
+                    }
                 }
                 true
             }
             .focusRequester(focus)
             .focusable()
-            .pointerInput(level, manual) {
-                detectTapGestures(
-                    // Tap : niveau suivant (mode manuel)
-                    onTap = { setManual((level.ordinal + 1) % Level.entries.size) },
-                    // Appui long : retour au mode auto
-                    onLongPress = { setManual(-1); percent = store.autoPercent() }
-                )
+            // Appui de 1,5 s = deverrouille ; tap = choix suivant (si deverrouille)
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    awaitFirstDown()
+                    var finished = false
+                    var tapped = false
+                    withTimeoutOrNull(1_500L) {
+                        tapped = waitForUpOrCancellation() != null
+                        finished = true
+                    }
+                    if (!finished) {
+                        onUnlock()
+                        waitForUpOrCancellation()
+                    } else if (tapped) {
+                        onTap()
+                    }
+                }
             },
         contentAlignment = Alignment.Center
     ) {
@@ -154,7 +197,7 @@ fun BadgeScreen(store: Store) {
         CurvedLayout(modifier = Modifier.fillMaxSize(), anchor = 270f) {
             curvedText(level.title, style = bigStyle, modifier = CurvedModifier.padding(14.dp))
         }
-        // Phrase en arc, en bas (lisible de gauche à droite)
+        // Phrase en arc, en bas (lisible de gauche a droite)
         CurvedLayout(
             modifier = Modifier.fillMaxSize(),
             anchor = 90f,
@@ -165,11 +208,20 @@ fun BadgeScreen(store: Store) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text(level.emoji, fontSize = 84.sp)
             Text(
-                text = if (manual >= 0) "MANUEL" else "AUTO · $percent %",
+                text = when {
+                    editing && manual < 0 -> "REGLAGE · AUTO"
+                    editing -> "REGLAGE"
+                    manual >= 0 -> "MANUEL"
+                    else -> "AUTO · $percent %"
+                },
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White.copy(alpha = 0.75f)
+                color = Color.White.copy(alpha = if (editing) 1f else 0.75f)
             )
+        }
+        // Anneau blanc = mode reglage deverrouille
+        if (editing) {
+            Box(Modifier.fillMaxSize().border(5.dp, Color.White, CircleShape))
         }
     }
 }
