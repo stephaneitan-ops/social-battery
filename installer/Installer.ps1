@@ -92,6 +92,7 @@ if ($Mode -eq 'diag') {
     $log  = Join-Path $desk 'SocialBattery-diagnostic.txt'
     $png  = Join-Path $desk 'SocialBattery-ecran.png'
     & $adb -s $serial logcat -c
+    & $adb -s $serial shell svc power stayon true
     & $adb -s $serial shell am force-stop fr.stephane.socialbattery
     & $adb -s $serial shell input keyevent KEYCODE_WAKEUP
     & $adb -s $serial shell am start -n fr.stephane.socialbattery/.MainActivity *> $null
@@ -117,9 +118,12 @@ if ($Mode -eq 'diag') {
         "=== Journal ==="
         "=== Appli ==="
         (& $adb -s $serial logcat -d -v brief "SocialBattery:V" "AndroidRuntime:E" "*:S")
+        "=== Cadran ==="
+        (& $adb -s $serial logcat -d -v brief | Select-String -Pattern "DWF|WatchFace|atchface|omplication|socialbattery" | Select-Object -Last 150)
         "=== Systeme ==="
         (& $adb -s $serial logcat -d -v brief "*:W")
     ) | Out-File -Encoding utf8 $log
+    & $adb -s $serial shell svc power stayon false
     Write-Host ""
     Write-Host "Termine. Trois fichiers sont sur ton Bureau :" -ForegroundColor Green
     Write-Host "  SocialBattery-diagnostic.txt, SocialBattery-ecran.png et SocialBattery-cadran.png"

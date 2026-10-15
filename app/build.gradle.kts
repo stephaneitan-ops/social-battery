@@ -12,7 +12,7 @@ android {
         applicationId = "fr.stephane.socialbattery"
         minSdk = 30
         targetSdk = 34
-        versionCode = 6
+        versionCode = 7
         versionName = "1.3"
     }
 

@@ -21,8 +21,15 @@ class BatteryComplicationService : SuspendingComplicationDataSourceService() {
 
     override fun getPreviewData(type: ComplicationType): ComplicationData? = build(type, Level.HAPPY)
 
-    override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData? =
-        build(request.complicationType, Store(this).currentLevel())
+    override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData? {
+        val level = Store(this).currentLevel()
+        android.util.Log.i("SocialBattery", "cadran demande type=${request.complicationType} niveau=$level")
+        return build(request.complicationType, level)
+    }
+
+    override fun onComplicationActivated(complicationInstanceId: Int, type: ComplicationType) {
+        android.util.Log.i("SocialBattery", "complication activee id=$complicationInstanceId type=$type")
+    }
 
     private fun build(type: ComplicationType, level: Level): ComplicationData? {
         val label = PlainComplicationText.Builder(level.title).build()
