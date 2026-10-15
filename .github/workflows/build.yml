@@ -36,15 +36,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download -R google/watchface --pattern "*.jar" -D wff || true
-          ls wff > wff.log 2>&1 || echo "pas de jar" > wff.log
-          for j in wff/*.jar; do
-            [ -f "$j" ] || continue
-            echo "== $j" >> wff.log
-            java -jar "$j" 1 watchface/src/main/res/raw/watchface.xml >> wff.log 2>&1 || true
-          done
-          msg=$(head -60 wff.log | cut -c1-300 | sed ':a;N;$!ba;s/\n/%0A/g')
-          echo "::warning title=WFF::$msg"
+          gh release download -R google/watchface --pattern "wff-validator.jar" -D wff
+          java -jar wff/wff-validator.jar 1 watchface/src/main/res/raw/watchface.xml 2>&1 | tee wff.log
+          if ! grep -q "PASSED" wff.log; then
+            msg=$(grep SEVERE wff.log | head -20 | cut -c1-300 | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error::Cadran invalide%0A$msg"
+            exit 1
+          fi
 
       - name: Renommer les APK
         run: |

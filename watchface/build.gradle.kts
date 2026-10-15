@@ -11,8 +11,8 @@ android {
         applicationId = "fr.stephane.socialbattery.watchface"
         minSdk = 33
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
     }
     signingConfigs {
         getByName("debug") {
