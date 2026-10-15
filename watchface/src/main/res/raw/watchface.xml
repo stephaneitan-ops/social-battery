@@ -10,7 +10,7 @@
 
     <Scene backgroundColor="#FF000000">
 
-        <!-- Écran actif : badge complet en couleur, fourni par l'appli (masqué au repos) -->
+        <!-- Badge en couleur, fourni par l'appli ; au repos (AOD) il reste affiché, atténué -->
         <ComplicationSlot slotId="0" x="0" y="0" width="450" height="450"
             supportedTypes="PHOTO_IMAGE" isCustomizable="TRUE">
             <DefaultProviderPolicy
@@ -21,30 +21,9 @@
             <BoundingOval x="0" y="0" width="450" height="450" />
             <Complication type="PHOTO_IMAGE">
                 <PartImage x="0" y="0" width="450" height="450">
-                    <Variant mode="AMBIENT" target="alpha" value="0" />
+                    <Variant mode="AMBIENT" target="alpha" value="170" />
                     <Image resource="[COMPLICATION.PHOTO_IMAGE]" />
                 </PartImage>
-            </Complication>
-        </ComplicationSlot>
-
-        <!-- Écran au repos (AOD) : fond noir, juste le mot du niveau -->
-        <ComplicationSlot slotId="1" x="75" y="150" width="300" height="80"
-            supportedTypes="SHORT_TEXT" isCustomizable="TRUE">
-            <DefaultProviderPolicy
-                defaultSystemProvider="EMPTY"
-                defaultSystemProviderType="SHORT_TEXT"
-                primaryProvider="fr.stephane.socialbattery/fr.stephane.socialbattery.BatteryComplicationService"
-                primaryProviderType="SHORT_TEXT" />
-            <BoundingBox x="0" y="0" width="300" height="80" />
-            <Complication type="SHORT_TEXT">
-                <PartText x="0" y="0" width="300" height="80" alpha="0">
-                    <Variant mode="AMBIENT" target="alpha" value="255" />
-                    <Text align="CENTER">
-                        <Font family="SYNC_TO_DEVICE" size="48" weight="BOLD" color="#FFFFFFFF">
-                            <Template>%s<Parameter expression="[COMPLICATION.TEXT]" /></Template>
-                        </Font>
-                    </Text>
-                </PartText>
             </Complication>
         </ComplicationSlot>
 
