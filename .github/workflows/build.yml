@@ -32,6 +32,20 @@ jobs:
             exit 1
           }
 
+      - name: Valider le cadran (validateur officiel Google)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download -R google/watchface --pattern "*.jar" -D wff || true
+          ls wff > wff.log 2>&1 || echo "pas de jar" > wff.log
+          for j in wff/*.jar; do
+            [ -f "$j" ] || continue
+            echo "== $j" >> wff.log
+            java -jar "$j" 1 watchface/src/main/res/raw/watchface.xml >> wff.log 2>&1 || true
+          done
+          msg=$(head -60 wff.log | cut -c1-300 | sed ':a;N;$!ba;s/\n/%0A/g')
+          echo "::warning title=WFF::$msg"
+
       - name: Renommer les APK
         run: |
           mkdir out
