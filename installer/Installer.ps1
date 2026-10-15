@@ -1,3 +1,4 @@
+param([string]$Mode = 'install')
 $ErrorActionPreference = 'Continue'
 $here  = Split-Path -Parent $MyInvocation.MyCommand.Path
 $base  = Join-Path $env:LOCALAPPDATA 'SocialBattery'
@@ -79,8 +80,41 @@ if (-not $dev) {
     Pause-Exit 1
 }
 
-# 3. Installation
 $serial = ($dev -split "`t")[0]
+
+# Mode diagnostic : journal + capture d'ecran sur le Bureau
+if ($Mode -eq 'diag') {
+    Write-Host ""
+    Write-Host "Montre connectee. Diagnostic en cours (20 secondes)..." -ForegroundColor Green
+    $desk = [Environment]::GetFolderPath('Desktop')
+    $log  = Join-Path $desk 'SocialBattery-diagnostic.txt'
+    $png  = Join-Path $desk 'SocialBattery-ecran.png'
+    & $adb -s $serial logcat -c
+    & $adb -s $serial shell am force-stop fr.stephane.socialbattery
+    & $adb -s $serial shell am start -n fr.stephane.socialbattery/.MainActivity *> $null
+    Start-Sleep -Seconds 8
+    & $adb -s $serial shell screencap -p /sdcard/sb.png
+    & $adb -s $serial pull /sdcard/sb.png $png *> $null
+    @(
+        "=== Montre ==="
+        (& $adb -s $serial shell getprop ro.product.model)
+        (& $adb -s $serial shell getprop ro.build.version.release)
+        (& $adb -s $serial shell getprop ro.build.version.sdk)
+        "=== Appli installee ==="
+        (& $adb -s $serial shell dumpsys package fr.stephane.socialbattery | Select-String "versionName|granted=")
+        "=== Ecran au premier plan ==="
+        (& $adb -s $serial shell dumpsys activity activities | Select-String "mResumedActivity|topResumedActivity")
+        "=== Journal ==="
+        (& $adb -s $serial logcat -d -v brief "*:W")
+    ) | Out-File -Encoding utf8 $log
+    Write-Host ""
+    Write-Host "Termine. Deux fichiers sont sur ton Bureau :" -ForegroundColor Green
+    Write-Host "  SocialBattery-diagnostic.txt et SocialBattery-ecran.png"
+    Write-Host "Envoie-les a Claude."
+    Pause-Exit 0
+}
+
+# 3. Installation
 Write-Host ""
 Write-Host "Montre connectee. Installation en cours (1 a 2 minutes)..." -ForegroundColor Green
 & $adb -s $serial install -r (Join-Path $here 'SocialBattery-app.apk')

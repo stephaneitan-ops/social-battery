@@ -43,6 +43,7 @@ jobs:
           mkdir -p pkg/SocialBattery-Installateur
           cp out/*.apk installer/Installer.ps1 pkg/SocialBattery-Installateur/
           sed 's/$/\r/' installer/Installer.bat > pkg/SocialBattery-Installateur/Installer.bat
+          sed 's/$/\r/' installer/Diagnostic.bat > pkg/SocialBattery-Installateur/Diagnostic.bat
           sed -i 's/$/\r/' pkg/SocialBattery-Installateur/Installer.ps1
           (cd pkg && zip -r ../out/SocialBattery-Installateur-Windows.zip SocialBattery-Installateur)
 
