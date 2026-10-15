@@ -7,6 +7,7 @@ import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationType
 import androidx.wear.watchface.complications.data.PhotoImageComplicationData
 import androidx.wear.watchface.complications.data.PlainComplicationText
+import androidx.wear.watchface.complications.data.RangedValueComplicationData
 import androidx.wear.watchface.complications.data.ShortTextComplicationData
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
@@ -31,6 +32,12 @@ class BatteryComplicationService : SuspendingComplicationDataSourceService() {
         return when (type) {
             ComplicationType.PHOTO_IMAGE ->
                 PhotoImageComplicationData.Builder(badgeIcon(level), label)
+                    .setTapAction(tap).build()
+            // Le cadran dessine le badge lui-même à partir du niveau (0 = HAPPY ... 3 = DRAINED)
+            ComplicationType.RANGED_VALUE ->
+                RangedValueComplicationData.Builder(
+                    level.ordinal.toFloat(), 0f, (Level.entries.size - 1).toFloat(), label
+                ).setText(label).setTitle(PlainComplicationText.Builder(level.tagline).build())
                     .setTapAction(tap).build()
             ComplicationType.SHORT_TEXT ->
                 ShortTextComplicationData.Builder(label, label).setTapAction(tap).build()
