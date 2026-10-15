@@ -38,14 +38,22 @@ jobs:
           cp app/build/outputs/apk/debug/app-debug.apk out/SocialBattery-app.apk
           cp watchface/build/outputs/apk/debug/watchface-debug.apk out/SocialBattery-cadran.apk
 
+      - name: Créer l'installateur Windows (zip)
+        run: |
+          mkdir -p pkg/SocialBattery-Installateur
+          cp out/*.apk installer/Installer.ps1 pkg/SocialBattery-Installateur/
+          sed 's/$/\r/' installer/Installer.bat > pkg/SocialBattery-Installateur/Installer.bat
+          sed -i 's/$/\r/' pkg/SocialBattery-Installateur/Installer.ps1
+          (cd pkg && zip -r ../out/SocialBattery-Installateur-Windows.zip SocialBattery-Installateur)
+
       - uses: actions/upload-artifact@v4
         with:
           name: apk
-          path: out/*.apk
+          path: out/*
 
       - name: Publier en téléchargement direct (release "latest")
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete latest -y --cleanup-tag || true
-          gh release create latest out/*.apk --title "Dernière version" --notes "APK prêts à installer : appli + cadran."
+          gh release create latest out/* --title "Dernière version" --notes "Sur PC Windows : télécharge SocialBattery-Installateur-Windows.zip, décompresse-le, double-clic sur Installer.bat."
