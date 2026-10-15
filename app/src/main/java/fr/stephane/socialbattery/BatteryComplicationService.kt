@@ -30,11 +30,19 @@ class BatteryComplicationService : SuspendingComplicationDataSourceService() {
         )
         return when (type) {
             ComplicationType.PHOTO_IMAGE ->
-                PhotoImageComplicationData.Builder(Icon.createWithBitmap(BadgeRenderer.render(level)), label)
+                PhotoImageComplicationData.Builder(badgeIcon(level), label)
                     .setTapAction(tap).build()
             ComplicationType.SHORT_TEXT ->
                 ShortTextComplicationData.Builder(label, label).setTapAction(tap).build()
             else -> null
         }
+    }
+
+    /** Image PNG compacte (quelques dizaines de Ko) pour passer sans souci vers le cadran. */
+    private fun badgeIcon(level: Level): Icon {
+        val out = java.io.ByteArrayOutputStream()
+        BadgeRenderer.render(level, 320).compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+        val bytes = out.toByteArray()
+        return Icon.createWithData(bytes, 0, bytes.size)
     }
 }
