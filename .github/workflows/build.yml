@@ -24,7 +24,13 @@ jobs:
           gradle-version: "8.10.2"
 
       - name: Compiler l'appli et le cadran
-        run: gradle :app:assembleDebug :watchface:assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          gradle :app:assembleDebug :watchface:assembleDebug 2>&1 | tee build.log || {
+            msg=$(grep -E "^e: |error:|ERROR|What went wrong|Could not|> |rror" build.log | head -40 | cut -c1-400 | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error::$msg"
+            exit 1
+          }
 
       - name: Renommer les APK
         run: |
