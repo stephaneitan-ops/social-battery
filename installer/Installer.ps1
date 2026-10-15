@@ -33,15 +33,30 @@ $dev = Get-Watch
 
 # 2. Association avec la montre (seulement si elle n'est pas deja reconnue)
 if (-not $dev) {
+    Write-Host "IMPORTANT : coupe le Bluetooth de la montre pendant l'installation" -ForegroundColor Yellow
+    Write-Host "(sinon elle quitte le Wi-Fi en cours de route). Tu le rallumeras apres."
+    Write-Host ""
     Write-Host "Sur la MONTRE :" -ForegroundColor Yellow
     Write-Host "  Parametres > Options de developpement > Debogage sans fil"
     Write-Host "  > Associer un nouvel appareil"
     Write-Host "  Laisse cet ecran ouvert pendant que tu remplis ce qui suit."
     Write-Host ""
-    $ip    = (Read-Host "Adresse IP affichee (exemple : 192.168.1.42)").Trim()
-    $pport = (Read-Host "Port affiche apres les deux-points (exemple : 37155)").Trim()
-    $code  = (Read-Host "Code a 6 chiffres").Trim()
-    & $adb pair "$($ip):$($pport)" $code
+    $paired = $false
+    for ($try = 1; $try -le 3 -and -not $paired; $try++) {
+        $ip    = (Read-Host "Adresse IP affichee (exemple : 192.168.1.42)").Trim()
+        $pport = (Read-Host "Port affiche apres les deux-points (exemple : 37155)").Trim()
+        $code  = (Read-Host "Code a 6 chiffres").Trim()
+        $out = (& $adb pair "$($ip):$($pport)" $code 2>&1 | Out-String)
+        if ($out -match "Successfully paired") {
+            Write-Host "Association reussie." -ForegroundColor Green
+            $paired = $true
+        } else {
+            Write-Host "Association refusee : $($out.Trim())" -ForegroundColor Red
+            Write-Host "Sur la montre, ferme puis rouvre 'Associer un nouvel appareil' : un NOUVEAU code et port s'affichent." -ForegroundColor Yellow
+            Write-Host ""
+        }
+    }
+    if (-not $paired) { Pause-Exit 1 }
 
     Write-Host "Connexion a la montre..."
     for ($i = 0; $i -lt 6 -and -not $dev; $i++) { Start-Sleep -Seconds 2; $dev = Get-Watch }
