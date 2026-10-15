@@ -1,6 +1,8 @@
-param([string]$Mode = 'install')
+param([string]$Mode = 'install', [string]$Here = '')
 $ErrorActionPreference = 'Continue'
-$here  = Split-Path -Parent $MyInvocation.MyCommand.Path
+$here  = if ($Here) { $Here.TrimEnd('\') } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$ProgressPreference = 'SilentlyContinue'
 $base  = Join-Path $env:LOCALAPPDATA 'SocialBattery'
 $adb   = Join-Path $base 'platform-tools\adb.exe'
 
@@ -118,11 +120,25 @@ if ($Mode -eq 'diag') {
     Pause-Exit 0
 }
 
+# Recupere la derniere version publiee sur GitHub (sinon prend les fichiers du dossier)
+function Get-Apk($name) {
+    $dst = Join-Path $base $name
+    try {
+        Invoke-WebRequest "https://github.com/stephaneitan-ops/social-battery/releases/latest/download/$name" -OutFile $dst -UseBasicParsing
+        return $dst
+    } catch {
+        return (Join-Path $here $name)
+    }
+}
+
 # 3. Installation
 Write-Host ""
 Write-Host "Montre connectee. Installation en cours (1 a 2 minutes)..." -ForegroundColor Green
-& $adb -s $serial install -r (Join-Path $here 'SocialBattery-app.apk')
-& $adb -s $serial install -r (Join-Path $here 'SocialBattery-cadran.apk')
+Write-Host "Telechargement de la derniere version..."
+$appApk  = Get-Apk 'SocialBattery-app.apk'
+$faceApk = Get-Apk 'SocialBattery-cadran.apk'
+& $adb -s $serial install -r $appApk
+& $adb -s $serial install -r $faceApk
 & $adb -s $serial shell am start -n fr.stephane.socialbattery/.MainActivity *> $null
 
 Write-Host ""
