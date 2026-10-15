@@ -27,7 +27,7 @@ jobs:
         run: |
           set -o pipefail
           gradle :app:assembleDebug :watchface:assembleDebug 2>&1 | tee build.log || {
-            msg=$(grep -E "^e: |error:|ERROR|What went wrong|Could not|> |rror" build.log | head -40 | cut -c1-400 | sed ':a;N;$!ba;s/\n/%0A/g')
+            msg=$(grep -E -A6 "^e: |error:|What went wrong" build.log | grep -v "^> Task" | head -40 | cut -c1-400 | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error::$msg"
             exit 1
           }
