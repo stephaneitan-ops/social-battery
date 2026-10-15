@@ -45,11 +45,9 @@
                                         <Font family="SYNC_TO_DEVICE" size="34" weight="BOLD" color="#FFFFFFFF">TALK TO ME!</Font>
                                     </TextCircular>
                                 </PartText>
-                                <PartText x="75" y="110" width="300" height="160">
-                                    <Text align="CENTER">
-                                        <Font family="SYNC_TO_DEVICE" size="120" color="#FFFFFFFF">😊</Font>
-                                    </Text>
-                                </PartText>
+                                <PartImage x="135" y="100" width="180" height="180">
+                                    <Image resource="emoji_happy" />
+                                </PartImage>
                             </Group>
                         </Compare>
                         <Compare expression="lvl1">
@@ -69,11 +67,9 @@
                                         <Font family="SYNC_TO_DEVICE" size="34" weight="BOLD" color="#FFFFFFFF">SMALL TALK ONLY</Font>
                                     </TextCircular>
                                 </PartText>
-                                <PartText x="75" y="110" width="300" height="160">
-                                    <Text align="CENTER">
-                                        <Font family="SYNC_TO_DEVICE" size="120" color="#FFFFFFFF">🙂</Font>
-                                    </Text>
-                                </PartText>
+                                <PartImage x="135" y="100" width="180" height="180">
+                                    <Image resource="emoji_ok" />
+                                </PartImage>
                             </Group>
                         </Compare>
                         <Compare expression="lvl2">
@@ -93,11 +89,9 @@
                                         <Font family="SYNC_TO_DEVICE" size="34" weight="BOLD" color="#FFFFFFFF">I&apos;M SO DONE</Font>
                                     </TextCircular>
                                 </PartText>
-                                <PartText x="75" y="110" width="300" height="160">
-                                    <Text align="CENTER">
-                                        <Font family="SYNC_TO_DEVICE" size="120" color="#FFFFFFFF">😒</Font>
-                                    </Text>
-                                </PartText>
+                                <PartImage x="135" y="100" width="180" height="180">
+                                    <Image resource="emoji_bored" />
+                                </PartImage>
                             </Group>
                         </Compare>
                         <Default>
@@ -117,11 +111,9 @@
                                         <Font family="SYNC_TO_DEVICE" size="34" weight="BOLD" color="#FFFFFFFF">LEAVE ME ALONE</Font>
                                     </TextCircular>
                                 </PartText>
-                                <PartText x="75" y="110" width="300" height="160">
-                                    <Text align="CENTER">
-                                        <Font family="SYNC_TO_DEVICE" size="120" color="#FFFFFFFF">😩</Font>
-                                    </Text>
-                                </PartText>
+                                <PartImage x="135" y="100" width="180" height="180">
+                                    <Image resource="emoji_drained" />
+                                </PartImage>
                             </Group>
                         </Default>
                     </Condition>
