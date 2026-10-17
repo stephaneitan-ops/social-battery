@@ -11,9 +11,9 @@ android {
     defaultConfig {
         applicationId = "fr.stephane.socialbattery"
         minSdk = 30
-        targetSdk = 34
-        versionCode = 9
-        versionName = "1.5"
+        targetSdk = 35
+        versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1) + 100
+        versionName = "2.0"
     }
 
     // Clé fixe : chaque nouvelle version s'installe par-dessus l'ancienne

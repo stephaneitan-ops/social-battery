@@ -50,6 +50,12 @@ import androidx.wear.compose.foundation.CurvedTextStyle
 import androidx.wear.compose.material.curvedText
 import androidx.wear.compose.foundation.padding
 import androidx.wear.compose.material.Text
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.text.style.TextAlign
+import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.material.Chip
+import androidx.wear.compose.material.ChipDefaults
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 
@@ -73,10 +79,24 @@ class MainActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         val store = Store(this)
-        setContent { BadgeScreen(store) }
+        setContent {
+            var introDone by remember { mutableStateOf(store.introDone) }
+            if (introDone) {
+                BadgeScreen(store)
+            } else {
+                IntroScreen(onContinue = {
+                    store.introDone = true
+                    introDone = true
+                    requestPermissions()
+                })
+            }
+        }
         Log.i(TAG, "setContent ok")
+        if (store.introDone) requestPermissions()
+    }
 
-        // Ne demande les autorisations que si elles manquent
+    /** Ne demande les autorisations que si elles manquent. */
+    private fun requestPermissions() {
         val heartPerm = if (Build.VERSION.SDK_INT >= 36) PERM_HEART_RATE else Manifest.permission.BODY_SENSORS
         val needed = missing(heartPerm, Manifest.permission.ACTIVITY_RECOGNITION, Manifest.permission.READ_CALENDAR)
         Log.i(TAG, "permissions manquantes=$needed")
@@ -224,6 +244,42 @@ fun BadgeScreen(store: Store) {
         // Anneau blanc = mode reglage deverrouille
         if (editing) {
             Box(Modifier.fillMaxSize().border(5.dp, Color.White, CircleShape))
+        }
+    }
+}
+
+
+/** Premier lancement : explique quelles donnees sont lues et pourquoi (exigence Google Play). */
+@Composable
+fun IntroScreen(onContinue: () -> Unit) {
+    val lines = listOf(
+        "Social Battery estime ton énergie sociale de la journée.",
+        "Pour ça, l'appli lit sur ta montre : rythme cardiaque (y compris en arrière-plan), pas, sommeil et sport, et les horaires de ton agenda.",
+        "Tout reste sur ta montre. Aucune donnée n'est envoyée ni partagée.",
+        "Estimation indicative, ce n'est pas un dispositif médical."
+    )
+    ScalingLazyColumn(
+        modifier = Modifier.fillMaxSize().background(Color(0xFF2ECC9A)),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        item {
+            Text("Social Battery", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
+        }
+        lines.forEach { l ->
+            item {
+                Text(
+                    l, fontSize = 13.sp, color = Color.White, textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+        }
+        item {
+            Chip(
+                onClick = onContinue,
+                label = { Text("Continuer", fontWeight = FontWeight.Bold) },
+                colors = ChipDefaults.primaryChipColors(backgroundColor = Color.White, contentColor = Color(0xFF0F6E56)),
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

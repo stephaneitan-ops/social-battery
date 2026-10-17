@@ -26,7 +26,7 @@ jobs:
       - name: Compiler l'appli et le cadran
         run: |
           set -o pipefail
-          gradle :app:assembleDebug :watchface:assembleDebug 2>&1 | tee build.log || {
+          gradle :app:assembleDebug :watchface:assembleDebug :app:bundleRelease :watchface:bundleRelease 2>&1 | tee build.log || {
             msg=$(grep -E -A6 "^e: |error:|What went wrong" build.log | grep -v "^> Task" | head -40 | cut -c1-400 | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error::$msg"
             exit 1
@@ -59,6 +59,11 @@ jobs:
           mkdir out
           cp app/build/outputs/apk/debug/app-debug.apk out/SocialBattery-app.apk
           cp watchface/build/outputs/apk/debug/watchface-debug.apk out/SocialBattery-cadran.apk
+
+      - name: Fichiers Play Store (non signés, signés hors GitHub)
+        run: |
+          cp app/build/outputs/bundle/release/*.aab out/SocialBattery-app-unsigned.aab
+          cp watchface/build/outputs/bundle/release/*.aab out/SocialBattery-cadran-unsigned.aab
 
       - name: Créer l'installateur Windows (zip)
         run: |

@@ -20,6 +20,11 @@ class Store(context: Context) {
     private val ctx = context.applicationContext
     private val p = ctx.getSharedPreferences("social_battery", Context.MODE_PRIVATE)
 
+    /** Ecran d'explication deja vu ? */
+    var introDone: Boolean
+        get() = p.getBoolean("introDone", false)
+        set(v) = p.edit().putBoolean("introDone", v).apply()
+
     /** -1 = mode auto, sinon index du niveau forcé à la main. */
     var manualIndex: Int
         get() = p.getInt("manual", -1)
